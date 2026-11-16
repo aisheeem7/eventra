@@ -42,6 +42,16 @@ npm run seed
 
 You can also sign in as admin and click **Reset demo data**. Dates are relative to the day you seed, so there is always one event running *today* (good for showing the scanner live) and a few completed events that already have certificates.
 
+## Deploy on Vercel
+
+1. Import the GitHub repo in Vercel. `vercel.json` already sets the build (`npm run build`), the output folder (`client/dist`) and routes `/api/*` to the Express app in `api/index.js`.
+2. Optional but recommended: add an environment variable `APP_SECRET` (any long random string). It signs sign-in tokens and ticket QR codes.
+3. Deploy. The demo data seeds itself on first request, and the same demo accounts work.
+
+**Limitation of this version:** Vercel functions have no permanent disk, so data is kept in `/tmp` per instance. New sign-ups, registrations and check-ins can reset when Vercel starts a fresh instance; the demo data always comes back. Connect a hosted database (only `server/db.js` touches storage) to make changes permanent.
+
+---
+
 ## Demo accounts
 
 All accounts use the password **`demo123`**. The sign-in page has one-click buttons for each of them.

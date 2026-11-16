@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import * as store from './db.js';
 import { seed } from './seed.js';
@@ -25,9 +24,8 @@ const publicUser = (u) => u && ({ id: u.id, name: u.name, email: u.email, roll: 
 
 function auth(...roles) {
   return (req, _res, next) => {
-    const token = (req.headers.authorization || '').replace('Bearer ', '');
-    const userId = db().sessions[token];
-    const user = userId && db().users.find((u) => u.id === userId);
+    const email = store.verifyToken((req.headers.authorization || '').replace('Bearer ', ''));
+    const user = email && db().users.find((u) => u.email.toLowerCase() === email);
     if (!user) return next(new HttpError(401, 'Please sign in again.'));
     if (roles.length && !roles.includes(user.role)) return next(new HttpError(403, 'You do not have access to this.'));
     req.user = user;
@@ -77,9 +75,8 @@ app.post('/api/auth/login', wrap((req) => {
   const id = String(identifier || '').trim().toLowerCase();
   const user = db().users.find((u) => u.email.toLowerCase() === id || u.roll.toLowerCase() === id);
   if (!user || !store.checkPassword(String(password || ''), user.password)) fail(401, 'Email/roll number or password is incorrect.');
-  const token = crypto.randomBytes(24).toString('hex');
-  db().sessions[token] = user.id; store.save();
-  return { token, user: publicUser(user) };
+  store.save();
+  return { token: store.signToken(user.email), user: publicUser(user) };
 }));
 
 app.post('/api/auth/register', wrap((req) => {
@@ -93,15 +90,13 @@ app.post('/api/auth/register', wrap((req) => {
   const user = { id: store.newId('usr'), name: name.trim(), email: email.trim(), roll: roll.trim().toUpperCase(), phone: phone || '', role: 'student',
     department: 'B.Tech CSE', year: year || '', password: store.hashPassword(password), createdAt: new Date().toISOString() };
   db().users.push(user);
-  const token = crypto.randomBytes(24).toString('hex');
-  db().sessions[token] = user.id; store.save();
-  return { token, user: publicUser(user) };
+  store.save();
+  return { token: store.signToken(user.email), user: publicUser(user) };
 }));
 
 app.get('/api/auth/me', auth(), wrap((req) => ({ user: publicUser(req.user) })));
 app.post('/api/auth/logout', auth(), wrap((req) => {
-  delete db().sessions[(req.headers.authorization || '').replace('Bearer ', '')]; store.save();
-  return { ok: true };
+  return { ok: true }; // tokens are stateless; the client discards it
 }));
 app.put('/api/auth/me', auth(), wrap((req) => {
   const { name, phone, year, avatar } = req.body || {};
@@ -400,8 +395,11 @@ if (fs.existsSync(dist)) {
   app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
 }
 
-app.listen(PORT, () => {
-  console.log(`\n  CEMS API running → http://localhost:${PORT}`);
+export default app;
+
+// Vercel imports the app as a serverless function (api/index.js); everywhere else we run a normal server.
+if (!process.env.VERCEL) app.listen(PORT, () => {
+  console.log(`\n  EvenTra API running → http://localhost:${PORT}`);
   if (fs.existsSync(dist)) console.log(`  App:             → http://localhost:${PORT}\n`);
   else console.log('  (Front end not built — use "npm run dev" and open http://localhost:5173)\n');
 });

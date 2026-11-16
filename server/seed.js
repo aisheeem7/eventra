@@ -14,6 +14,11 @@ function day(offset, time = '10:00') {
 }
 
 export function seed() {
+  // Same IDs on every instance, so links and tickets keep working across serverless instances.
+  return store.withSeededIds('eventra-demo-v1', seedData);
+}
+
+function seedData() {
   const db = store.reset({});
   const now = new Date().toISOString();
 
@@ -171,7 +176,7 @@ export function seed() {
   return db;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   seed();
   console.log(`Seeded demo data → ${store.DB_FILE}\nAll demo accounts use password: ${PASSWORD}`);
 }
