@@ -1,0 +1,31 @@
+{
+  "name": "cems",
+  "version": "1.0.0",
+  "description": "College Event Management System - Amity University Kolkata (working prototype)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c magenta,cyan \"node --watch server/index.js\" \"vite\"",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "seed": "node server/seed.js"
+  },
+  "engines": {
+    "node": ">=18.11"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.7",
+    "express": "^4.21.2",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.460.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "vite": "^5.4.11"
+  }
+}
